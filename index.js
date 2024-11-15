@@ -1,8 +1,10 @@
 const express = require('express');
 const { pool } = require('./db'); // Import the database pool
+const cors = require('cors'); // Import CORS middleware
 
 const app = express();
-app.use(express.json());
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Enable JSON body parsing
 
 // Endpoint to fetch leaderboard entries
 app.get('/leaderboard', async (req, res) => {
