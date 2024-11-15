@@ -1,33 +1,36 @@
 const express = require('express');
-const { pool } = require('./db'); // Import the database pool
-const cors = require('cors'); // Import CORS middleware
+const { pool } = require('./db'); // Assuming you have a db.js file for the PostgreSQL connection
+const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Enable JSON body parsing
-
-// Endpoint to fetch leaderboard entries
-app.get('/leaderboard', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM leaderboard ORDER BY deaths ASC, damage_taken ASC LIMIT 10');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        res.status(500).json({ error: 'Database query failed' });
-    }
-});
+app.use(cors()); // Allows cross-origin requests
+app.use(express.json());
 
 // Endpoint to submit a new leaderboard entry
 app.post('/leaderboard', async (req, res) => {
     const { playerName, deaths, timeTaken, damageTaken } = req.body;
-
     try {
-        const query = 'INSERT INTO leaderboard (player_name, deaths, time_taken, damage_taken) VALUES ($1, $2, $3, $4)';
-        await pool.query(query, [playerName, deaths, timeTaken, damageTaken]);
-        res.status(201).json({ success: true, message: 'Entry added successfully' });
+        const result = await pool.query(
+            'INSERT INTO leaderboard (playername, deaths, timetaken, damagetaken) VALUES ($1, $2, $3, $4) RETURNING *',
+            [playerName, deaths, timeTaken, damageTaken]
+        );
+        res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Error adding leaderboard entry:', error);
-        res.status(500).json({ error: 'Failed to add entry' });
+        res.status(500).json({ error: 'Database query failed' });
+    }
+});
+
+// Endpoint to retrieve the leaderboard
+app.get('/leaderboard', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM leaderboard ORDER BY deaths ASC, damagetaken ASC LIMIT 10'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        res.status(500).json({ error: 'Database query failed' });
     }
 });
 
