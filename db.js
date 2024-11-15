@@ -1,24 +1,16 @@
-const sql = require('mssql');
+const { Pool } = require('pg');
 
-const config = {
-    user: 'sa',               // Your SQL Server username
-    password: 'your_password', // Your SQL Server password
-    server: 'localhost',      // Your server address (use 'localhost' for local setup)
-    database: 'Leaderboard',  // Your database name
-    options: {
-        encrypt: false,       // Disable encryption for local connections
-        trustServerCertificate: true, // Required for some local SQL Server setups
-    },
-};
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL, // Render's PostgreSQL URL
+    ssl: { rejectUnauthorized: false }          // Required for most hosted databases
+});
 
-const poolPromise = new sql.ConnectionPool(config)
-    .connect()
-    .then((pool) => {
-        console.log('Connected to SQL Server');
-        return pool;
-    })
-    .catch((err) => {
-        console.error('Database Connection Failed:', err);
-    });
+pool.connect((err) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+    } else {
+        console.log('Connected to PostgreSQL database');
+    }
+});
 
-module.exports = { sql, poolPromise };
+module.exports = { pool };
