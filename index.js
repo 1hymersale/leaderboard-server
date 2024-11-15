@@ -1,25 +1,49 @@
 const express = require('express');
-const Database = require('@replit/database');
+const { sql, poolPromise } = require('./db');
 
 const app = express();
-const db = new Database();
 app.use(express.json());
 
-// POST endpoint to add a new leaderboard entry
+// POST: Add a new leaderboard entry
 app.post('/leaderboard', async (req, res) => {
     const { playerName, deaths, timeTaken, damageTaken } = req.body;
-    const entry = { playerName, deaths, timeTaken, damageTaken };
-    await db.set(playerName, entry);
-    res.status(201).send(entry);
+    const query = `
+        INSERT INTO Leaderboard (playerName, deaths, timeTaken, damageTaken)
+        VALUES (@playerName, @deaths, @timeTaken, @damageTaken)
+    `;
+
+    try {
+        const pool = await poolPromise;
+        await pool
+            .request()
+            .input('playerName', sql.NVarChar, playerName)
+            .input('deaths', sql.Int, deaths)
+            .input('timeTaken', sql.Float, timeTaken)
+            .input('damageTaken', sql.Int, damageTaken)
+            .query(query);
+
+        res.status(201).send('Leaderboard entry added successfully');
+    } catch (err) {
+        console.error('Error adding leaderboard entry:', err);
+        res.status(500).send('Internal server error');
+    }
 });
 
-// GET endpoint to retrieve the leaderboard
+// GET: Retrieve the leaderboard
 app.get('/leaderboard', async (req, res) => {
-    const entries = await db.getAll();
-    const sortedEntries = Object.values(entries)
-        .sort((a, b) => a.deaths - b.deaths || a.damageTaken - b.damageTaken)
-        .slice(0, 10);
-    res.send(sortedEntries);
+    const query = `
+        SELECT TOP 10 * FROM Leaderboard
+        ORDER BY deaths ASC, damageTaken ASC
+    `;
+
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(query);
+        res.send(result.recordset);
+    } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+        res.status(500).send('Internal server error');
+    }
 });
 
 const PORT = process.env.PORT || 3000;
