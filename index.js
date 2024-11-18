@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Endpoint to submit a new leaderboard entry
 app.post('/leaderboard', async (req, res) => {
-    const { playerName, deaths, timeTaken, damageTaken, map } = req.body;
+    const { playername, deaths, timetaken, damagetaken, map } = req.body;
 
     if (!map) {
         return res.status(400).send({ error: 'Map is required' });
@@ -17,7 +17,7 @@ app.post('/leaderboard', async (req, res) => {
     try {
         const result = await pool.query(
             'INSERT INTO leaderboard (playername, deaths, timetaken, damagetaken, map) VALUES ($1, $2, $3, $4, $5)',
-            [playername, deaths, timeTaken, damageTaken, map]
+            [playername, deaths, timetaken, damagetaken, map]
         );
         res.status(201).send(result.rows);
     } catch (error) {
