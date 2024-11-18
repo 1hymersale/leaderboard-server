@@ -17,7 +17,7 @@ app.post('/leaderboard', async (req, res) => {
     try {
         const result = await pool.query(
             'INSERT INTO leaderboard (playername, deaths, timetaken, damagetaken, map) VALUES ($1, $2, $3, $4, $5)',
-            [playerName, deaths, timeTaken, damageTaken, map]
+            [playername, deaths, timeTaken, damageTaken, map]
         );
         res.status(201).send(result.rows);
     } catch (error) {
